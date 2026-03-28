@@ -1,0 +1,30 @@
+version: 1
+
+flights:
+  max_price_usd: 1500
+  preferred_airlines: ["UA", "DL", "AA"]
+  allowed_cabin_classes: ["economy", "premium_economy"]
+  advance_booking_days: 7
+  require_refundable: false
+
+hotels:
+  max_price_per_night_usd: 250
+  min_star_rating: 3
+  max_star_rating: 5
+  preferred_chains: ["Marriott", "Hilton", "IHG"]
+
+ground_transport:
+  max_price_usd: 150
+  preferred_providers: ["Enterprise", "National"]
+
+trip:
+  max_total_usd: 5000
+  per_diem_usd: 75
+  approval_threshold_usd: 3000
+
+escalation:
+  rules:
+    - condition: "trip_total > approval_threshold"
+      action: "require_manager_approval"
+    - condition: "cabin_class == business"
+      action: "require_vp_approval"

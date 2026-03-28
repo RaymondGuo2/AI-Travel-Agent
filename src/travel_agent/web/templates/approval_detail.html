@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Approval {{ escalation_id[:8] }} — AI Travel Agent{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>Approval Request</h2>
+  <p><strong>Escalation ID:</strong> {{ escalation_id }}</p>
+  <p><strong>Trip ID:</strong> {{ trip_id }}</p>
+  <p><strong>Status:</strong> <span class="status-badge status-{{ status }}">{{ status }}</span></p>
+  <p style="margin-top:0.75rem"><strong>Reason for Escalation:</strong></p>
+  <p style="color:#555;margin-top:0.25rem">{{ reason }}</p>
+</div>
+
+<div class="card">
+  <h2>Trip Details</h2>
+  <pre>{{ details | tojson(indent=2) }}</pre>
+</div>
+
+{% if status == "pending" %}
+<div class="card">
+  <h2>Decision</h2>
+  <form id="decision-form">
+    <label>Your Email (for audit trail)</label>
+    <input type="email" name="approver_email" placeholder="manager@company.com">
+    <label>Notes (optional)</label>
+    <textarea name="notes" rows="3" placeholder="Approved for client meeting in Q1..."></textarea>
+    <div style="display:flex;gap:1rem;margin-top:0.5rem">
+      <button type="submit" name="decision" value="approve" class="btn btn-success">✓ Approve</button>
+      <button type="submit" name="decision" value="reject" class="btn btn-danger">✕ Reject</button>
+    </div>
+  </form>
+</div>
+
+<script>
+document.querySelectorAll('[name="decision"]').forEach(btn => {
+  btn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    const form = document.getElementById('decision-form');
+    const approved = e.target.value === 'approve';
+    const payload = {
+      approved,
+      approver_email: form.approver_email.value || null,
+      notes: form.notes.value || null,
+    };
+    const res = await fetch('/api/escalations/{{ escalation_id }}/decide', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload),
+    });
+    if (res.ok) {
+      location.href = '/approvals';
+    } else {
+      alert('Error processing decision');
+    }
+  });
+});
+</script>
+{% else %}
+<div class="alert alert-{{ 'success' if status == 'approved' else 'warning' }}" style="margin-top:1rem">
+  Decision recorded: <strong>{{ status }}</strong>
+  {% if decided_at %} at {{ decided_at[:19].replace("T"," ") }}{% endif %}
+</div>
+{% endif %}
+{% endblock %}
